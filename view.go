@@ -120,6 +120,22 @@ func (v *View) Name() string {
 	return v.name
 }
 
+func rune_width(r rune) int {
+    if r >= 0x1100 &&
+        (r <= 0x115f || r == 0x2329 || r == 0x232a ||
+            (r >= 0x2e80 && r <= 0xa4cf && r != 0x303f) ||
+            (r >= 0xac00 && r <= 0xd7a3) ||
+            (r >= 0xf900 && r <= 0xfaff) ||
+            (r >= 0xfe30 && r <= 0xfe6f) ||
+            (r >= 0xff00 && r <= 0xff60) ||
+            (r >= 0xffe0 && r <= 0xffe6) ||
+            (r >= 0x20000 && r <= 0x2fffd) ||
+            (r >= 0x30000 && r <= 0x3fffd)) {
+        return 2
+    }
+    return 1
+}
+
 // setRune sets a rune at the given point relative to the view. It applies the
 // specified colors, taking into account if the cell must be highlighted. Also,
 // it checks if the position is valid.
@@ -152,6 +168,7 @@ func (v *View) setRune(x, y int, ch rune, fgColor, bgColor Attribute) error {
 		fgColor = v.SelFgColor
 		bgColor = v.SelBgColor
 	}
+
 
 	termbox.SetCell(v.x0+x+1, v.y0+y+1, ch,
 		termbox.Attribute(fgColor), termbox.Attribute(bgColor))
@@ -356,7 +373,7 @@ func (v *View) draw() error {
 			if err := v.setRune(x, y, c.chr, fgColor, bgColor); err != nil {
 				return err
 			}
-			x++
+			x=x+rune_width(c.chr)
 		}
 		y++
 	}
@@ -429,6 +446,10 @@ func (v *View) ViewBuffer() string {
 		str += lineType(l.line).String() + "\n"
 	}
 	return strings.Replace(str, "\x00", " ", -1)
+}
+
+func (v *View)Lines() int{
+	return len(v.lines)
 }
 
 // Line returns a string with the line of the view's internal buffer
